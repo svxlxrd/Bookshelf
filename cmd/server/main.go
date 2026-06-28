@@ -6,12 +6,19 @@ import (
 	"net/http"
 
 	"github.com/bookshelf/monolith/internal/config"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
 	config := config.Load()
 
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
+	r := chi.NewRouter()
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(middleware.Recoverer)
+
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 
@@ -24,7 +31,7 @@ func main() {
 		}
 	})
 
-	if err := http.ListenAndServe(":" + config.Port, nil); err != nil {
+	if err := http.ListenAndServe(":"+config.Port, r); err != nil {
 		log.Fatal(err)
 	}
 }
