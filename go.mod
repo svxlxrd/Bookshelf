@@ -1,3 +1,3 @@
-module github.com/svxlxrd/bookshelf
+module github.com/bookshelf/monolith
 
 go 1.26.2
