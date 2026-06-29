@@ -12,7 +12,7 @@ func Load() *Config {
 	return &Config{
 		Port: getEnv("PORT", "8080"),
 		DatabaseURL: getEnv("DATABASE_URL",
-			"postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"),
+			"postgres://postgres:postgres@localhost:5432/bookshelf?sslmode=disable"),
 		JWTSecret: getEnv("JWT_SECRET", "mock"),
 	}
 }

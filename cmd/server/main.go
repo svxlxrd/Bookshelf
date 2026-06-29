@@ -8,10 +8,20 @@ import (
 	"github.com/bookshelf/monolith/internal/config"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 func main() {
 	config := config.Load()
+
+	// DB
+	db, err := sqlx.Connect()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	log.Println("Connected to database")
 
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
