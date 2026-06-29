@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// ========== entities ==========
+
+// Book основная доменная модель книги для хранения в БД
 type Book struct {
 	ID        string `json:"id" db:"id"`
 	Title     string `json:"title" db:"title"`
@@ -22,6 +25,7 @@ type Book struct {
 	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// BookResponse модель книги для API ответа
 type BookResponse struct {
 	ID        string `json:"id"`
 	Title     string `json:"title"`
@@ -41,7 +45,9 @@ type BookResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// Request типы
+// ========== DTO ==========
+
+// CreateBookRequest данные для создания книги
 type CreateBookRequest struct {
 	Title         string  `json:"title"`
 	Author        string  `json:"author"`
@@ -50,6 +56,7 @@ type CreateBookRequest struct {
 	PublishedYear *int    `json:"published_year"`
 }
 
+// UpdateBookRequest данные для обновления книги (все поля опциональные)
 type UpdateBookRequest struct {
 	Title         *string `json:"title"`
 	Author        *string `json:"author"`
@@ -58,6 +65,7 @@ type UpdateBookRequest struct {
 	PublishedYear *int    `json:"published_year"`
 }
 
+// BookFilter параметры фильтрации списка книг
 type BookFilter struct {
 	Search string
 	Sort   string
@@ -66,11 +74,15 @@ type BookFilter struct {
 	Limit  int
 }
 
+// BookListResponse ответ со списком книг и пагинацией
 type BookListResponse struct {
 	Data       []BookResponse `json:"data"`
 	Pagination Pagination     `json:"pagination"`
 }
 
+// ========== methods ==========
+
+// ToResponse конвертирует Book (DB модель) в BookResponse (API модель)
 func (b *Book) ToResponse() BookResponse {
 	response := BookResponse{
 		ID:           b.ID,
@@ -104,4 +116,3 @@ func (b *Book) ToResponse() BookResponse {
 
 	return response
 }
-
