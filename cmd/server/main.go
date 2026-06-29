@@ -16,7 +16,7 @@ func main() {
 	config := config.Load()
 
 	// DB
-	db, err := sqlx.Connect()
+	db, err := sqlx.Connect("postgres", config.DatabaseURL)
 	if err != nil {
 		log.Fatal(err)
 	}
