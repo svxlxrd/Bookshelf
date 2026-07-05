@@ -71,7 +71,7 @@ func (r *BookRepository) GetByID(ctx context.Context, id string) (*domain.Book, 
 	return book, nil
 }
 
-func (r *BookRepository) List(ctx context.Context, filter *domain.BookFilter) ([]*domain.Book, int, error) {
+func (r *BookRepository) List(ctx context.Context, filter *domain.BookFilter) ([]domain.Book, int, error) {
 	limit := filter.Limit
 	if limit <= 0 || limit > 100 {
 		limit = 10
@@ -82,42 +82,45 @@ func (r *BookRepository) List(ctx context.Context, filter *domain.BookFilter) ([
 		offset = 0
 	}
 
+	search := "%" + filter.Search + "%"
+
 	query := `
 	SELECT 
-        b.id, b.title, b.author, b.created_by, b.description, 
-        b.isbn, b.published_year, b.created_at, b.updated_at,
-        COALESCE(COUNT(r.id), 0) AS reviews_count,
-        COALESCE(AVG(r.rating), 0) AS average_rating,
-        COUNT(*) OVER() as total_count
+		b.id, b.title, b.author, b.created_by, b.description, 
+		b.isbn, b.published_year, b.created_at, b.updated_at,
+		COALESCE(COUNT(r.id), 0) AS reviews_count,
+		COALESCE(AVG(r.rating), 0) AS average_rating,
+		COUNT(*) OVER() as total_count
 	FROM books b
-	LEFT JOIN reviews r on b.id = r.book_id
+	LEFT JOIN reviews r ON b.id = r.book_id
 	WHERE b.title ILIKE $1 OR b.author ILIKE $1
 	GROUP BY b.id
 	ORDER BY b.created_at DESC
-	LIMIT $2 OFFSET $3`
+	LIMIT $2 OFFSET $3
+	`
 
-	search := "%" + filter.Search + "%"
-
-	type result struct {
-		*domain.Book
+	type row struct {
+		domain.Book
 		TotalCount int `db:"total_count"`
 	}
-	var rows []result
 
-	err := r.db.SelectContext(ctx, &rows, query, search, filter.Limit, offset)
+	var rows []row
+
+	err := r.db.SelectContext(ctx, &rows, query, search, limit, offset)
 	if err != nil {
 		return nil, 0, err
 	}
 
 	if len(rows) == 0 {
-		return []*domain.Book{}, 0, nil
+		return []domain.Book{}, 0, nil
+	}
+
+	books := make([]domain.Book, len(rows))
+	for i, r := range rows {
+		books[i] = r.Book
 	}
 
 	totalCount := rows[0].TotalCount
-	books := make([]*domain.Book, len(rows))
-	for i, row := range rows {
-		books[i] = row.Book
-	}
 
 	return books, totalCount, nil
 }
