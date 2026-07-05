@@ -8,3 +8,5 @@ require (
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/lib/pq v1.12.3
 )
+
+require golang.org/x/crypto v0.53.0 // indirect
