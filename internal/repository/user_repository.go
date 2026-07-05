@@ -38,7 +38,7 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 
 	rows, err := r.db.NamedQueryContext(ctx, query, user)
 	if err != nil {
-		return fmt.Errorf("failed to insert user: %w", err)
+		return fmt.Errorf("failed to create user: %w", err)
 	}
 	defer rows.Close()
 
