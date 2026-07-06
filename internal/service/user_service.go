@@ -146,3 +146,89 @@ func (s *UserService) Register(ctx context.Context, req domain.RegisterRequest) 
 		},
 	}, nil
 }
+
+func (s *UserService) Login(ctx context.Context, req domain.LoginRequest) (*domain.AuthResponse, error) {
+	if req.Email == "" {
+		return nil, ErrInvalidEmail
+	}
+
+	user, err := s.repo.GetByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
+		return nil, ErrInvalidCredentials
+	}
+
+	token, err := s.generateToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &domain.AuthResponse{
+		AccessToken: token,
+		TokenType:   "access",
+		ExpiresIn:   1 * time.Hour,
+		User:        user.ToPublic(),
+	}, nil
+}
+
+func (s *UserService) GetByID(ctx context.Context, userID string) (*domain.User, error) {
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (s *UserService) Update(ctx context.Context, userID string, req domain.UpdateUserRequest) (*domain.User, error) {
+	user, err := s.repo.GetByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	if req.Username != "" {
+
+		// Проверка длины
+		if len(req.Username) < 3 {
+			return nil, ErrInvalidUsername
+		}
+
+		// Проверка уникальности
+		existingUser, err := s.repo.GetByUsername(ctx, req.Username)
+		switch {
+		case errors.Is(err, repository.ErrUserNotFound):
+
+		case err != nil:
+			return nil, err
+
+		case existingUser.ID != userID:
+			return nil, ErrUsernameExists
+
+		default:
+			// username принадлежит этому же пользователю
+
+		}
+
+		user.Username = req.Username
+	}
+
+	// 4. Сохраняем
+	err = s.repo.Update(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedUser := &domain.User{
+		ID: user.ID,
+		Username: req.Username,
+		Email: user.Email,
+		PasswordHash: user.PasswordHash,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: time.Now(),
+	}
+
+	return updatedUser, nil
+}
