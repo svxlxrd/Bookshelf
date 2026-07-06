@@ -68,9 +68,9 @@ func decodeJSON(r *http.Request, v interface{}) error {
 	return json.NewDecoder(r.Body).Decode(v)
 }
 
-func getUserID(ctx context.Context) (string, bool) {
-	userID, ok := ctx.Value(userIDKey).(string)
-	return userID, ok
+func getUserID(ctx context.Context) string {
+	userID := ctx.Value(userIDKey).(string)
+	return userID
 }
 
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
