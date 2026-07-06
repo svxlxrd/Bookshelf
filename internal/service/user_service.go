@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/bookshelf/monolith/internal/domain"
 	"github.com/bookshelf/monolith/internal/repository"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -22,6 +24,60 @@ var (
 type UserService struct {
 	repo      *repository.UserRepository
 	jwtSecret string
+}
+
+func (s *UserService) generateToken(userID string) (string, error) {
+	claims := jwt.MapClaims{
+		"sub": userID,
+		"exp": time.Now().Add(time.Hour).Unix(),
+		"iat": time.Now().Unix(),
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	signedToken, err := token.SignedString([]byte(s.jwtSecret))
+	if err != nil {
+		return "", fmt.Errorf("failed to sign token: %w", err)
+	}
+
+	return signedToken, nil
+}
+
+func (s *UserService) ValidateToken(tokenString string) (string, error) {
+	token, err := jwt.Parse(tokenString,
+		func(t *jwt.Token) (interface{}, error) {
+			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("unexpected signing method")
+			}
+
+			return []byte(s.jwtSecret), nil
+		})
+
+	if err != nil {
+		return "", fmt.Errorf("invalid token: %w", err)
+	}
+
+	if !token.Valid {
+		return "", fmt.Errorf("invalid token")
+	}
+
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		return "", fmt.Errorf("invalid token claims")
+	}
+
+	if exp, ok := claims["exp"].(float64); ok {
+		if int64(exp) < time.Now().Unix() {
+			return "", fmt.Errorf("token expired")
+		}
+	}
+
+	sub, ok := claims["sub"].(string)
+	if !ok || sub == "" {
+		return "", fmt.Errorf("invalid subject")
+	}
+
+	return sub, nil
 }
 
 func (s *UserService) Register(ctx context.Context, req domain.RegisterRequest) (*domain.AuthResponse, error) {
@@ -63,20 +119,30 @@ func (s *UserService) Register(ctx context.Context, req domain.RegisterRequest) 
 
 	// создание пользователя
 	user := &domain.User{
-		Username: req.Username,
-		Email: req.Email,
+		Username:     req.Username,
+		Email:        req.Email,
 		PasswordHash: string(hash),
 	}
 
-	if err := s.repo.Create(ctx, user); err != nil {
+	createdUser, err := s.repo.Create(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// генерация токена
+	token, err := s.generateToken(createdUser.ID)
+	if err != nil {
 		return nil, err
 	}
 
 	// генерируем токен и возвращаем ответ
 	return &domain.AuthResponse{
-			User: domain.UserPublic{
-				Username: user.Username,
-				Email:    user.Email,
-			},
-		}, nil
+		AccessToken: token,
+		TokenType:   "access",
+		ExpiresIn:   1 * time.Hour,
+		User: domain.UserPublic{
+			Username: user.Username,
+			Email:    user.Email,
+		},
+	}, nil
 }

@@ -2,7 +2,7 @@ package domain
 
 import "time"
 
-// ==========  entities ========== 
+// ==========  entities ==========
 
 // User полная модель пользователя для хранения в БД
 type User struct {
@@ -27,8 +27,7 @@ type UserSummary struct {
 	Username string `json:"username"`
 }
 
-
-// ==========  DTO ========== 
+// ==========  DTO ==========
 
 // RegisterReuest данные для регистрации нового пользователя
 type RegisterRequest struct {
@@ -43,7 +42,6 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-
 // UpdateUserRequest данные для обновления профиля
 type UpdateUserRequest struct {
 	Username string `json:"username,omitempty"`
@@ -53,10 +51,9 @@ type UpdateUserRequest struct {
 type AuthResponse struct {
 	AccessToken string     `json:"access_token"`
 	TokenType   string     `json:"token_type"`
-	ExpiresIn   int        `json:"expires_in"`
+	ExpiresIn   time.Duration  `json:"expires_in"`
 	User        UserPublic `json:"user"`
 }
-
 
 // ========== methods ==========
 
@@ -68,7 +65,6 @@ func (u *User) ToPublic() UserPublic {
 		Email:    u.Email,
 	}
 }
-
 
 // ToSummary возвращает минимальное представление User
 func (u *User) ToSummary() UserSummary {

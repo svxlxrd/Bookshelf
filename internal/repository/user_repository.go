@@ -28,7 +28,7 @@ func NewUserRepository(db *sqlx.DB) *UserRepository {
 	}
 }
 
-func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
+func (r *UserRepository) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
 	user.ID = uuid.New().String()
 
 	query := `
@@ -38,18 +38,23 @@ func (r *UserRepository) Create(ctx context.Context, user *domain.User) error {
 
 	rows, err := r.db.NamedQueryContext(ctx, query, user)
 	if err != nil {
-		return fmt.Errorf("failed to create user: %w", err)
+		return nil, fmt.Errorf("failed to create user: %w", err)
 	}
 	defer rows.Close()
 
 	if rows.Next() {
 		err = rows.Scan(&user.CreatedAt, &user.UpdatedAt)
 		if err != nil {
-			return fmt.Errorf("failed to scan timestamps: %w", err)
+			return nil, fmt.Errorf("failed to scan timestamps: %w", err)
 		}
 	}
 
-	return nil
+	return &domain.User{
+		ID: user.ID,
+		Username: user.Username,
+		Email: user.Email,
+		PasswordHash: user.PasswordHash,
+	},nil
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id string) (*domain.User, error) {
