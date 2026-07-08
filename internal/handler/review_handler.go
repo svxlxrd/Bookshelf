@@ -41,7 +41,7 @@ func (h *Handler) GetReview(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrReviewNotFound):
-			writeError(w, r, http.StatusNotFound, "USER_NOT_FOUND", "review not found")
+			writeError(w, r, http.StatusNotFound, "REVIEW_NOT_FOUND", "review not found")
 		default:
 			writeError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")
 		}
