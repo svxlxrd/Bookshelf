@@ -124,11 +124,7 @@ func (h *Handler) GetCurrentUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UpdateCurrentUser(w http.ResponseWriter, r *http.Request) {
-	userID, ok := r.Context().Value(userIDKey).(string)
-	if !ok {
-		writeError(w, r, http.StatusUnauthorized, "UNAUTHORIZED", "user not authenticated")
-		return
-	}
+	userID := getUserID(r.Context())
 
 	var req domain.UpdateUserRequest
 	if err := decodeJSON(r, &req); err != nil {
