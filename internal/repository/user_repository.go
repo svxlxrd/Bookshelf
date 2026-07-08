@@ -128,7 +128,7 @@ func (r *UserRepository) Update(ctx context.Context, user *domain.User) error {
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("user not found or no changes made")
+		return ErrUserNotFound
 	}
 
 	return nil

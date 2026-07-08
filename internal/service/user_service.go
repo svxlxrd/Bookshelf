@@ -19,6 +19,7 @@ var (
 	ErrInvalidPassword    = errors.New("invalid password")
 	ErrInvalidUsername    = errors.New("invalid username")
 	ErrInvalidEmail       = errors.New("invalid email")
+	ErrUserNotFound		  = errors.New("user not found")
 )
 
 type UserService struct {
@@ -177,7 +178,12 @@ func (s *UserService) Login(ctx context.Context, req domain.LoginRequest) (*doma
 func (s *UserService) GetByID(ctx context.Context, userID string) (*domain.User, error) {
 	user, err := s.repo.GetByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		switch {
+		case errors.Is(err, repository.ErrUserNotFound):
+			return nil, ErrUserNotFound
+		default:
+			return nil, fmt.Errorf("get user: %w", err)
+		}
 	}
 
 	return user, nil
@@ -190,13 +196,10 @@ func (s *UserService) Update(ctx context.Context, userID string, req domain.Upda
 	}
 
 	if req.Username != "" {
-
-		// Проверка длины
 		if len(req.Username) < 3 {
 			return nil, ErrInvalidUsername
 		}
 
-		// Проверка уникальности
 		existingUser, err := s.repo.GetByUsername(ctx, req.Username)
 		switch {
 		case errors.Is(err, repository.ErrUserNotFound):
@@ -206,29 +209,15 @@ func (s *UserService) Update(ctx context.Context, userID string, req domain.Upda
 
 		case existingUser.ID != userID:
 			return nil, ErrUsernameExists
-
-		default:
-			// username принадлежит этому же пользователю
-
 		}
 
 		user.Username = req.Username
 	}
 
 	// 4. Сохраняем
-	err = s.repo.Update(ctx, user)
-	if err != nil {
+	if err = s.repo.Update(ctx, user); err != nil {
 		return nil, err
 	}
 
-	updatedUser := &domain.User{
-		ID: user.ID,
-		Username: req.Username,
-		Email: user.Email,
-		PasswordHash: user.PasswordHash,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: time.Now(),
-	}
-
-	return updatedUser, nil
+	return user, nil
 }
