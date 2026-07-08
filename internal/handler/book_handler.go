@@ -46,7 +46,7 @@ func (h *Handler) GetBook(w http.ResponseWriter, r *http.Request) {
 	bookResponse, err := h.services.Book.GetByID(r.Context(), bookID)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrUserNotFound):
+		case errors.Is(err, service.ErrBookNotFound):
 			writeError(w, r, http.StatusNotFound, "USER_NOT_FOUND", "user not found")
 		default:
 			writeError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")
