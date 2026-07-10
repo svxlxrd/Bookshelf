@@ -13,16 +13,26 @@ import (
 func (h *Handler) ListBookReviews(w http.ResponseWriter, r *http.Request) {
 	bookID := chi.URLParam(r, "bookId")
 
-	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "invalid page")
-		return
+	page := 1
+	if p := r.URL.Query().Get("page"); p != "" {
+		var err error
+
+		page, err = strconv.Atoi(p)
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "invalid page")
+			return
+		}
 	}
 
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "invalid limit")
-		return
+	limit := 10
+	if l := r.URL.Query().Get("limit"); l != "" {
+		var err error
+
+		limit, err = strconv.Atoi(l)
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "invalid limit")
+			return
+		}
 	}
 
 	reviewList, err := h.services.Review.ListByBookID(r.Context(), bookID, page, limit)

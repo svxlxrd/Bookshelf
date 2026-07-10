@@ -11,6 +11,10 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+var (
+	ErrBookNotFound = errors.New("Book not found")
+)
+
 type BookRepository struct {
 	db *sqlx.DB
 }
@@ -59,10 +63,10 @@ func (r *BookRepository) GetByID(ctx context.Context, id string) (*domain.Book, 
 
 	book := &domain.Book{}
 
-	err := r.db.GetContext(ctx, &book, query, id)
+	err := r.db.GetContext(ctx, book, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil, ErrBookNotFound
 		}
 
 		return nil, fmt.Errorf("get book by id: %w", err)
@@ -156,7 +160,7 @@ func (r *BookRepository) Update(ctx context.Context, book *domain.Book) error {
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("book not found: %w", err)
+		return ErrBookNotFound
 	}
 
 	return nil

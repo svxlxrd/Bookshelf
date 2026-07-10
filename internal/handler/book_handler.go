@@ -11,16 +11,25 @@ import (
 )
 
 func (h *Handler) ListBooks(w http.ResponseWriter, r *http.Request) {
-	page, err := strconv.Atoi(r.URL.Query().Get("page"))
-	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "invalid page")
-		return
+	page := 1
+	limit := 10
+
+	var err error
+
+	if p := r.URL.Query().Get("page"); p != "" {
+		page, err = strconv.Atoi(p)
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "invalid page")
+			return
+		}
 	}
 
-	limit, err := strconv.Atoi(r.URL.Query().Get("limit"))
-	if err != nil {
-		writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "invalid limit")
-		return
+	if l := r.URL.Query().Get("limit"); l != "" {
+		limit, err = strconv.Atoi(l)
+		if err != nil {
+			writeError(w, r, http.StatusBadRequest, "INVALID_REQUEST", "invalid limit")
+			return
+		}
 	}
 
 	filter := domain.BookFilter{
@@ -47,7 +56,7 @@ func (h *Handler) GetBook(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrBookNotFound):
-			writeError(w, r, http.StatusNotFound, "USER_NOT_FOUND", "book not found")
+			writeError(w, r, http.StatusNotFound, "BOOK_NOT_FOUND", "book not found")
 		default:
 			writeError(w, r, http.StatusInternalServerError, "INTERNAL_ERROR", "internal server error")
 		}

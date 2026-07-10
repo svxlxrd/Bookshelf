@@ -87,13 +87,13 @@ func (r *ReviewRepository) ListByBookID(ctx context.Context, bookID string, page
 	// основной запрос
 	query := `
 	SELECT 
-		id
-		book_id
-		user_id
-		rating
-		title
-		content
-		created_at
+		id,
+		book_id,
+		user_id,
+		rating,
+		title,
+		content,
+		created_at,
 		updated_at
 	FROM reviews
 	WHERE book_id = $1
@@ -101,7 +101,9 @@ func (r *ReviewRepository) ListByBookID(ctx context.Context, bookID string, page
 	LIMIT $2 OFFSET $3;`
 
 	var reviews []domain.Review
-	if err := r.db.SelectContext(ctx, &reviews, query, bookID, limit, page); err != nil {
+	offset := (page - 1) * limit
+
+	if err := r.db.SelectContext(ctx, &reviews, query, bookID, limit, offset); err != nil {
 		return nil, 0, fmt.Errorf("failed to list reviews by book ID: %w", err)
 	}
 
